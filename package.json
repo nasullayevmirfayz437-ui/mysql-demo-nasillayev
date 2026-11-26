@@ -2,7 +2,13 @@
   "name": "mysql-demo",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "mysql2": "^3.11.0"
+    "@netlify/database": "^2.0.4",
+    "drizzle-orm": "^1.0.0-beta.22"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^6.1.2",
+    "drizzle-kit": "^1.0.0-beta.22"
   }
 }

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MySQL demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+    input { padding: 8px; width: 60%; }
+    button { padding: 8px 14px; }
+    li { margin: 6px 0; }
+    small { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Ismingizni qoldiring</h1>
+  <form id="name-form">
+    <input id="name" aria-label="Ism" placeholder="Ism" maxlength="100">
+    <button type="submit">Saqlash</button>
+  </form>
+  <div id="status" role="status"></div>
+  <ul id="list"></ul>
+
+<script>
+const API = "/.netlify/functions/api";
+const form = document.getElementById("name-form");
+const input = document.getElementById("name");
+const button = form.querySelector("button");
+const statusMessage = document.getElementById("status");
+const list = document.getElementById("list");
+
+function nameRow(row) {
+  const item = document.createElement("li");
+  item.textContent = row.name + " ";
+  const date = document.createElement("small");
+  date.textContent = "(" + new Date(row.created_at).toLocaleString() + ")";
+  item.appendChild(date);
+  return item;
+}
+
+async function load() {
+  const response = await fetch(API);
+  if (!response.ok) throw new Error();
+  const rows = await response.json();
+  list.replaceChildren(...rows.map(nameRow));
+}
+
+const initialLoad = load().catch(() => {
+  statusMessage.textContent = "Ro‘yxatni yuklab bo‘lmadi. Sahifani yangilab ko‘ring.";
+});
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (button.disabled) return;
+
+  const name = input.value.trim();
+  if (!name || name.length > 100) {
+    statusMessage.textContent = "Ism 1–100 belgidan iborat bo‘lishi kerak.";
+    input.focus();
+    return;
+  }
+
+  button.disabled = true;
+  input.readOnly = true;
+  try {
+    await initialLoad;
+    statusMessage.textContent = "Saqlanmoqda…";
+    const response = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) throw new Error();
+    const saved = await response.json();
+    list.prepend(nameRow(saved));
+    if (list.childElementCount > 50) list.lastElementChild.remove();
+    input.value = "";
+    statusMessage.textContent = "Ismingiz muvaffaqiyatli saqlandi.";
+  } catch {
+    statusMessage.textContent = "Ismni saqlab bo‘lmadi. Qayta urinib ko‘ring.";
+  } finally {
+    input.readOnly = false;
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
